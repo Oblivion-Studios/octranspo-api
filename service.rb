@@ -1,24 +1,6 @@
-# Copyright 2011 Don Kelly <karfai@gmail.com>
-
-# This file is part of octranspo-api.
-
-# octranspo-api is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-
-# octranspo-api is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with octranspo-api.  If not, see <http://www.gnu.org/licenses/>.
-
 require 'json'
 require 'sinatra'
 require 'rdiscount'
-
 require './model'
 require './lib'
 require './live'
@@ -28,7 +10,7 @@ require './location'
 def show_all_stops
   # complete list of stops, no period
   content_type :json
-  Stop.all.to_json  
+  Stop.all.to_json
 end
 
 get '/stops' do
@@ -54,7 +36,6 @@ end
 
 get '/stops/:number/nearby' do
   meters = (params.key?('within')) ? params['within'].to_i : 400
-
   content_type :json
   show_nearby(Stop.first(:number => params[:number].to_i), meters)
 end
@@ -81,7 +62,6 @@ end
 
 get '/stops_nearby/:lat/:lon' do
   meters = (params.key?('within')) ? params['within'].to_i : 400
-
   content_type :json
   show_nearby(Coords.new(params[:lat].to_f, params[:lon].to_f), meters)
 end
@@ -92,7 +72,6 @@ get '/stops_nearby/:lat/:lon/closest' do
 end
 
 ## TRAVEL ##
-
 get '/arrivals/:stop_number' do
   minutes = (params.key?('minutes')) ? params[:minutes].to_i : 15
   num = params[:stop_number].to_i
@@ -120,21 +99,17 @@ end
 ## LIVE ##
 get '/live/routes/:stop_id' do
   rv = {}
-
   if params.key? 'app_id' and params.key? 'api_key'
     rv = Live.new(params['app_id'], params['api_key']).routes(params[:stop_id])
   end
-
   rv.to_json
 end
 
 get '/live/arrivals/:stop_no/:route_no' do
   rv = {}
-
   if params.key? 'app_id' and params.key? 'api_key'
     rv = Live.new(params['app_id'], params['api_key']).arrivals(params[:stop_no], params[:route_no])
   end
-
   rv.to_json
 end
 
@@ -145,7 +120,6 @@ end
 
 get '/version' do
   ver = Version.first
-
   content_type :json
   { :api => API_VERSION, :schema => ver.schema_version, :feed => ver.feed_version }.to_json
 end

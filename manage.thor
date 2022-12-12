@@ -23,11 +23,15 @@ require 'zip/zip'
 
 class TermProgress
   def begin(member, count)
-    @progress_bar = ProgressBar.new(member, count)
+    @progress_bar = ProgressBar.create(
+      total: count,
+      format: "Adding data to #{member} table: %p%% <%B>",
+      smoothing: 0.5
+    )
   end
 
-  def step(no)
-    @progress_bar.set(no)
+  def step()
+    @progress_bar.increment
   end
 
   def finish()
@@ -64,7 +68,7 @@ class Manage < Thor
         cmp.add(m, zf.read("#{m}.txt"), progress)
       end
     end
-    
+
     puts "= Making indexes"
     cmp.make_indexes
   end

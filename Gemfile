@@ -1,11 +1,12 @@
 source 'http://rubygems.org'
-gem 'data_mapper' 
+gem 'data_mapper'
 gem 'dm-postgres-adapter'
 gem 'dm-sqlite-adapter'
 gem 'faraday'
 gem 'geokit', "< 1.6.5"
 gem 'nokogiri'
 gem 'progressbar'
+gem 'puma'
 gem 'rdiscount'
 gem 'sinatra'
 gem 'sqlite3'

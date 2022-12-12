@@ -83,10 +83,10 @@ class Compiler
   def add_stops(vals)
     lat = 0.0
     lon = 0.0
-    
+
     lat = vals['stop_lat'].to_f unless 0 == vals['stop_lat'].length
     lon = vals['stop_lon'].to_f unless 0 == vals['stop_lon'].length
-        
+
     @db.execute(
         'INSERT INTO stops (label,number,name,lat,lon) VALUES (?,?,?,?,?)',
         [vals['stop_id'], vals['stop_code'].to_i, vals['stop_name'], lat, lon,]
@@ -103,7 +103,7 @@ class Compiler
         'INSERT INTO routes (name,route_type) VALUES (?,?)',
         [vals['route_short_name'], rt,]
         )
-    
+
     @cache[:routes][vals['route_id']] = @db.last_insert_row_id
   end
 
@@ -117,7 +117,7 @@ class Compiler
         'INSERT INTO trips (headsign,block,service_period_id,route_id) VALUES (?,?,?,?)',
         [vals['trip_headsign'], block, service_period_id, route_id]
         )
-    
+
     @cache[:trips][vals['trip_id']] = @db.last_insert_row_id
   end
 
@@ -129,7 +129,7 @@ class Compiler
   def add_pickups(vals)
     trip_id = @cache[:trips][vals['trip_id']]
     stop_id = @cache[:stops][vals['stop_id']]
-    
+
     @db.execute(
         'INSERT INTO pickups (arrival, departure, sequence, trip_id, stop_id) VALUES (?,?,?,?,?)',
         [time_to_secs(vals['arrival_time']), time_to_secs(vals['departure_time']), vals['stop_sequence'].to_i, trip_id, stop_id]
@@ -141,7 +141,7 @@ class Compiler
     line_no = 0
     names = []
     lines = contents.split("\r\n")
-    
+
     progress.begin(member, lines.length)
 
     @db.transaction do |db|
@@ -151,14 +151,14 @@ class Compiler
           l.split(',').collect { |l| l.gsub('"', '').strip }.each_with_index do |fld, idx|
             vals[names[idx]] = fld
           end
-          
+
           send("add_#{member}", vals)
         else
           names = l.split(',')
         end
 
         line_no += 1
-        progress.step(line_no)
+        progress.step()
       end
     end
 

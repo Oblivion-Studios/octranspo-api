@@ -1,6 +1,5 @@
 require 'faraday'
 require 'nokogiri'
-
 require './time'
 
 class Hash
@@ -37,9 +36,8 @@ class Live
   def update_pickups(stop_no, pickups)
     adjustments = {}
     counters = {}
-
     # this is complicated b/c our pickups only contain a time window
-    # the remote live call gives us much more. therefore we try to 
+    # the remote live call gives us much more. therefore we try to
     # merge the results into the original pickups. we assume that we're
     # getting the results from the live system in the same order
     # as those in the pickups array
@@ -54,19 +52,22 @@ class Live
       vals = old_vals.clone
       route_no = vals[:trip][:route]
       live = adjustments[route_no][counters[route_no]]
-      vals[:arrival_difference] = vals[:arrival] - live[:expected]
+      if live.nil?
+        vals[:arrival_difference] = nil
+      else
+        vals[:arrival_difference] = vals[:arrival] - live[:expected]
+        vals[:arrival] = live[:expected]
+        vals[:live] = {
+          :departure_from_origin => live[:departure_from_origin],
+          :age                   => live[:age],
+          :location              => {
+            :lat                   => live[:latitude],
+            :lon                   => live[:longitude],
+            :approximate_speed     => live[:approximate_speed],
+          },
+        }
+      end
       vals[:scheduled_arrival] = vals[:arrival]
-      vals[:arrival] = live[:expected]
-      vals[:live] = {
-        :departure_from_origin => live[:departure_from_origin],
-        :age                   => live[:age],
-        :location              => {
-          :lat                   => live[:latitude],
-          :lon                   => live[:longitude],
-          :approximate_speed     => live[:approximate_speed],
-        },
-      }
-
       counters[route_no] += 1
       vals
     end if adjustments.length
@@ -74,18 +75,16 @@ class Live
 
   def arrivals(stop_no, route_no)
     rv = []
-
     next_for_route(stop_no, route_no) do |vals|
       rv = vals
     end
-
-    rv    
+    rv
   end
 
   def routes(stop_no)
     rv = []
     # BUG: docs have <RoutesForStopData> as root node; running system yields <GetRouteSummaryForStopResult>
-    request('GetRouteSummaryForStop', 'GetRouteSummaryForStopResult', { 'stopNo' => stop_no }) do |root_node|
+    request('GetRouteSummaryForStop', { 'stopNo' => stop_no }) do |root_node|
       # BUG: we seem to get Routes/Route/node in cases of multiple routes, but Routes/Route in
       # cases of single routes; therefore, do both and concatenate
       multi = root_node.css('Routes/Route/node').collect do |pn|
@@ -96,31 +95,32 @@ class Live
       end
       rv = multi + single
     end
-
     rv
   end
 
   def request(op, root, payload)
     payload['appID'] = @app_id
     payload['apiKey'] = @api_key
-    
-    resp = @conn.post("/#{op}", payload.join('=', '&'))
+    payload['format'] = 'xml'
+    resp = @conn.get("/v2.0/#{op}") do |req|
+      req.params = payload
+    end
     p resp.body
+    p resp.status
     yield(Nokogiri::XML(resp.body).css(root))
   end
-  
+
   def apply_mapping(key, node, vals)
     @mappings[key].each do |k, v|
       n = node.css(k.to_s)
       vals[v[:key].to_sym] = v[:conv].call(n.first.content) if n
     end
-    
     vals
   end
-  
+
   def next_for_route(stop_no, route_no)
     # BUG: docs have <StopInfoData> as root node; running system yields <GetNextTripsForStopResult>
-    request('GetNextTripsForStop', 'GetNextTripsForStopResult', { 'stopNo' => stop_no, 'routeNo' => route_no }) do |root_node|
+    request('GetNextTripsForStop', 'GetNextTripsForStopAllRoutes', { 'stopNo' => stop_no, 'routeNo' => route_no }) do |root_node|
       arr = root_node.css('Trips/Trip/node').collect do |pn|
         apply_mapping(:next_for_route, pn, { :stop_no => stop_no, :route_no => route_no })
       end
