@@ -1,22 +1,4 @@
-# Copyright 2011 Don Kelly <karfai@gmail.com>
-
-# This file is part of octranspo-api.
-
-# octranspo-api is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-
-# octranspo-api is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with octranspo-api.  If not, see <http://www.gnu.org/licenses/>.
-
 require 'geokit'
-
 require './model'
 
 def measure_distance(st, pt0)
@@ -29,7 +11,7 @@ def measure_all_stops(pt0, ignore)
     if st.id != ignore
       yield(measure_distance(st, pt0), st)
     end
-  end  
+  end
 end
 
 def nearby_point(pt0, distance_in_meters, ignore=0)
@@ -37,7 +19,6 @@ def nearby_point(pt0, distance_in_meters, ignore=0)
   measure_all_stops(pt0, ignore) do |dist_to, st|
     matches << { :distance => dist_to.to_i, :stop => st } if dist_to <= distance_in_meters
   end
-
   matches.sort { |a, b| a[:distance] <=> b[:distance] }
 end
 

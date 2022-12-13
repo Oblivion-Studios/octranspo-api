@@ -6,17 +6,6 @@ A prototype instance has been deployed to heroku as http://octranspo-api.heroku.
 
 The sqlite3 database provided by the compiler tool is also suitable for using on a mobile device. With indexes, the typical size is typically less then 100MB.
 
-Source code
-===========
-
-The source is available from github (https://github.com/karfai/octranspo-api) licensed under the GPL (v3).
-
-Authors
-=======
-Don Kelly <karfai@gmail.com>  
-https://github.com/karfai/  
-http://www.strangeware.ca/  
-
 Outstanding issues
 ==================
 
@@ -106,43 +95,3 @@ Request upcoming stops for a bus we got on (97 Bayshore @ T+66060s) further alon
 
     > curl "http://octranspo-api.heroku.com/destinations/12203/26?range=2"
     [{"stop":{"number":3012,"name":"WESTBORO 1A"},"trip":{"id":12203,"route":"97","headsign":"Bayshore"},"arrival":66180,"departure":66180,"sequence":27},{"stop":{"number":3013,"name":"DOMINION 1A"},"trip":{"id":12203,"route":"97","headsign":"Bayshore"},"arrival":66240,"departure":66240,"sequence":28}]
-
-Technical details
-=================
-This application is a RESTful data service providing JSON formatted results. It's implemented in Ruby using Sinatra as the web front and DataMapper as the ORM. Location computations are done with the geokit ruby gem (I reckon I've checked all the kool buzzwords). More enlightenment could be achieved by reading the code.
-
-Deployment
-==========
-Setup
------
-1. Get the code.
-
-> git clone git@github.com:karfai/octranspo-api.git
-
-2. Get a recent ZIP archive of the GTFS data. It should be available from the sources mentioned above.
-
-3. "Compile" the sqlite3 database (about 5 minutes)
-
-> thor manage:compile :sqlite_db_name :gtfs_zip_filename
-
-Deploy a local testing instance
--------------------------------
-1. Local testing instance
-
-> DATABASE_URL=sqlite://:path_to_dbfile rackup -p :port_number config.ru
-
-The local-up.sh script is my testing script that probably tells you something meaningless about how I lay out my project directories. You could modify this if you like.
-
-OR Deploy to heroku
--------------------
-1. **Once**: create a heroku application
-
-> (visit heroku.com to learn how to do this incantation)
-
-2. **When the db changes**: Push the db (about 25-30 minutes)
-
-> heroku db:push sqlite://$PWD/:db_file_name
-
-3. Deploy to heroku
-
-> git push heroku master

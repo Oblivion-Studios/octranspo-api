@@ -1,6 +1,5 @@
 require 'rspec'
 require 'date'
-
 require './model'
 require File.dirname(__FILE__) + '/spec_helper'
 
