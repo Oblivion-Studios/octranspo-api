@@ -98,18 +98,20 @@ end
 
 ## LIVE ##
 get '/live/routes/:stop_id' do
-  rv = {}
+  rv = []
   if params.key? 'app_id' and params.key? 'api_key'
     rv = Live.new(params['app_id'], params['api_key']).routes(params[:stop_id])
   end
+  content_type :json
   rv.to_json
 end
 
 get '/live/arrivals/:stop_no/:route_no' do
-  rv = {}
+  rv = []
   if params.key? 'app_id' and params.key? 'api_key'
     rv = Live.new(params['app_id'], params['api_key']).arrivals(params[:stop_no], params[:route_no])
   end
+  content_type :json
   rv.to_json
 end
 
@@ -125,5 +127,6 @@ get '/version' do
 end
 
 not_found do
+  content_type :json
   { :error => 'not_found' }.to_json
 end

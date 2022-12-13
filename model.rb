@@ -188,11 +188,14 @@ class Pickup
   belongs_to :stop
 
   def self.pickups_at_stop_in_range(stop_number, range, dt)
-    Stop.first(:number => stop_number).pickups.all(
-      :arrival.gte => range[0],
-      :arrival.lte => range[1],
-      :order => [:arrival.asc]).select do |pi|
-        pi.trip.service_period.in_service? dt
+    # If not nil, then we have pickups for this stop
+    if not Stop.first(:number => stop_number).nil?
+      Stop.first(:number => stop_number).pickups.all(
+        :arrival.gte => range[0],
+        :arrival.lte => range[1],
+        :order => [:arrival.asc]).select do |pi|
+          pi.trip.service_period.in_service? dt
+      end
     end
   end
 

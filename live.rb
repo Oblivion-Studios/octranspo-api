@@ -52,21 +52,17 @@ class Live
       vals = old_vals.clone
       route_no = vals[:trip][:route]
       live = adjustments[route_no][counters[route_no]]
-      if live.nil?
-        vals[:arrival_difference] = nil
-      else
-        vals[:arrival_difference] = vals[:arrival] - live[:expected]
-        vals[:arrival] = live[:expected]
-        vals[:live] = {
-          :departure_from_origin => live[:departure_from_origin],
-          :age                   => live[:age],
-          :location              => {
-            :lat                   => live[:latitude],
-            :lon                   => live[:longitude],
-            :approximate_speed     => live[:approximate_speed],
-          },
-        }
-      end
+      vals[:arrival_difference] = vals[:arrival] - live[:expected]
+      vals[:arrival] = live[:expected]
+      vals[:live] = {
+        :departure_from_origin => live[:departure_from_origin],
+        :age                   => live[:age],
+        :location              => {
+          :lat                   => live[:latitude],
+          :lon                   => live[:longitude],
+          :approximate_speed     => live[:approximate_speed],
+        },
+      }
       vals[:scheduled_arrival] = vals[:arrival]
       counters[route_no] += 1
       vals
@@ -84,7 +80,7 @@ class Live
   def routes(stop_no)
     rv = []
     # BUG: docs have <RoutesForStopData> as root node; running system yields <GetRouteSummaryForStopResult>
-    request('GetRouteSummaryForStop', { 'stopNo' => stop_no }) do |root_node|
+    request('GetRouteSummaryForStop', 'GetRouteSummaryForStopResult', { 'stopNo' => stop_no }) do |root_node|
       # BUG: we seem to get Routes/Route/node in cases of multiple routes, but Routes/Route in
       # cases of single routes; therefore, do both and concatenate
       multi = root_node.css('Routes/Route/node').collect do |pn|
@@ -105,9 +101,9 @@ class Live
     resp = @conn.get("/v2.0/#{op}") do |req|
       req.params = payload
     end
-    p resp.body
-    p resp.status
-    yield(Nokogiri::XML(resp.body).css(root))
+    doc = Nokogiri::XML(resp.body, nil, 'utf-8')
+    doc.remove_namespaces!
+    yield(doc.css(root))
   end
 
   def apply_mapping(key, node, vals)
@@ -120,11 +116,14 @@ class Live
 
   def next_for_route(stop_no, route_no)
     # BUG: docs have <StopInfoData> as root node; running system yields <GetNextTripsForStopResult>
-    request('GetNextTripsForStop', 'GetNextTripsForStopAllRoutes', { 'stopNo' => stop_no, 'routeNo' => route_no }) do |root_node|
-      arr = root_node.css('Trips/Trip/node').collect do |pn|
+    request('GetNextTripsForStop', 'GetNextTripsForStopResult', { 'stopNo' => stop_no, 'routeNo' => route_no }) do |root_node|
+      multi = root_node.css('Trips/Trip/node').collect do |pn|
         apply_mapping(:next_for_route, pn, { :stop_no => stop_no, :route_no => route_no })
       end
-      yield(arr)
+      single = root_node.css('Trips/Trip').collect do |pn|
+        apply_mapping(:next_for_route, pn, { :stop_no => stop_no, :route_no => route_no })
+      end
+      yield(multi + single)
     end
   end
 end
